@@ -1,4 +1,4 @@
-﻿-- MySQL dump 10.13  Distrib 5.1.32, for Win32 (ia32)
+-- MySQL dump 10.13  Distrib 5.1.32, for Win32 (ia32)
 --
 -- Host: localhost    Database: minecraft
 -- ------------------------------------------------------
