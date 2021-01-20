@@ -1,4 +1,3 @@
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -14,11 +13,11 @@ import java.util.logging.Level;
  * @author James
  */
 public class MySQLSource extends DataSource {
-	  
-	  private String table_groups,table_users,table_items,table_kits,table_warps,table_homes,table_reservelist,table_whitelist,table_bans;
+
+    private String table_groups,table_users,table_items,table_kits,table_warps,table_homes,table_reservelist,table_whitelist,table_bans;
     
     public void initialize() {
-    	PropertiesFile properties = new PropertiesFile("mysql.properties");
+        PropertiesFile properties = new PropertiesFile("mysql.properties");
         table_groups = properties.getString("groups", "groups");
         table_users = properties.getString("users", "users");
         table_items = properties.getString("items", "items");
@@ -266,7 +265,7 @@ public class MySQLSource extends DataSource {
             ps.setString(1, player.getName());
             ps.setString(2, etc.combineSplit(0, player.getGroups(), ","));
             ps.setString(3, player.getPrefix());
-            ps.setString(4, etc.combineSplit(0, player.getCommands(), ","));
+            ps.setString(4, etc.combineSplit(0, player.getCommands().toArray(new String[0]), ","));
             ps.setBoolean(5, player.getAdmin());
             ps.setBoolean(6, player.canModifyWorld());
             ps.setBoolean(7, player.ignoreRestrictions());
@@ -302,7 +301,7 @@ public class MySQLSource extends DataSource {
             ps = conn.prepareStatement("UPDATE "+table_users+" SET groups = ?, prefix = ?, commands = ?, admin = ?, canmodifyworld = ?, ignoresrestrictions = ? WHERE id = ?");
             ps.setString(1, etc.combineSplit(0, player.getGroups(), ","));
             ps.setString(2, player.getPrefix());
-            ps.setString(3, etc.combineSplit(0, player.getCommands(), ","));
+            ps.setString(3, etc.combineSplit(0, player.getCommands().toArray(new String[0]), ","));
             ps.setBoolean(4, player.getAdmin());
             ps.setBoolean(5, player.canModifyWorld());
             ps.setBoolean(6, player.ignoreRestrictions());

@@ -1,4 +1,3 @@
-
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -12,7 +11,7 @@ import net.minecraft.server.MinecraftServer;
 
 /**
  * Player.java - Interface for eo so mods don't have to update often.
- * 
+ *
  * @author James
  */
 public class Player extends BaseEntity {
@@ -21,15 +20,15 @@ public class Player extends BaseEntity {
     private er user;
     private int id = -1;
     private String prefix = "";
-    private String[] commands = new String[]{""};
-    private ArrayList<String> groups = new ArrayList<String>();
+    private ArrayList<String> commands = new ArrayList<>();
+    private ArrayList<String> groups = new ArrayList<>();
     private String[] ips = new String[]{""};
     private boolean ignoreRestrictions = false;
     private boolean admin = false;
     private boolean canModifyWorld = false;
     private boolean muted = false;
     private Inventory inventory, craftingTable, equipment;
-    private List<String> onlyOneUseKits = new ArrayList<String>();
+    private List<String> onlyOneUseKits = new ArrayList<>();
     private Pattern badChatPattern = Pattern.compile("[^ !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ\\[\\\\\\]^_'abcdefghijklmnopqrstuvwxyz{|}~\u2302\u00C7\u00FC\u00E9\u00E2\u00E4\u00E0\u00E5\u00E7\u00EA\u00EB\u00E8\u00EF\u00EE\u00EC\u00C4\u00C5\u00C9\u00E6\u00C6\u00F4\u00F6\u00F2\u00FB\u00F9\u00FF\u00D6\u00DC\u00F8\u00A3\u00D8\u00D7\u0192\u00E1\u00ED\u00F3\u00FA\u00F1\u00D1\u00AA\u00BA\u00BF\u00AE\u00AC\u00BD\u00BC\u00A1\u00AB\u00BB]");
 
     /**
@@ -40,7 +39,7 @@ public class Player extends BaseEntity {
 
     /**
      * Kicks player with the specified reason
-     * 
+     *
      * @param reason
      */
     public void kick(String reason) {
@@ -49,7 +48,7 @@ public class Player extends BaseEntity {
 
     /**
      * Sends a message to the player
-     * 
+     *
      * @param message
      */
     public void sendMessage(String message) {
@@ -58,16 +57,16 @@ public class Player extends BaseEntity {
 
     /**
      * Gives an item to the player
-     * 
+     *
      * @param item
      */
     public void giveItem(Item item) {
         giveItem(item.getItemId(), item.getAmount());
     }
-    
+
     /**
      * Makes player send message.
-     * 
+     *
      * @param message
      */
     public void chat(String message){
@@ -104,24 +103,31 @@ public class Player extends BaseEntity {
      * 
      */
     public void command(String command){
-         try {
+        try {
+            String[] split = command.split(" ");
+            String command_start = split[0].toLowerCase();
             if (etc.getInstance().isLogging()) {
                 log.info("Command used by " + getName() + " " + command);
             }
-            String[] split = command.split(" ");
             if ((Boolean) etc.getLoader().callHook(PluginLoader.Hook.COMMAND, new Object[]{user, split})) {
                 return; // No need to go on, commands were parsed.
             }
-            if (!canUseCommand(split[0]) && !split[0].startsWith("/#")) {
+            if (!canUseCommand(command_start) && !command_start.startsWith("/#")) {
                 if (etc.getInstance().showUnknownCommand()) {
                     sendMessage(Colors.Rose + "Unknown command.");
                 }
                 return;
             }
-            if (split[0].equalsIgnoreCase("/help")) {
-                // Meh, not the greatest way, but not the worst either.
+
+            Player player = null;
+            Player target = null;
+            Warp warp = null;
+            double degreeRotation;
+            switch (command_start) {
+
+            case "/help":
                 List<String> availableCommands = new ArrayList<String>();
-                for (Entry<String, String> entry : etc.getInstance().getCommands().entrySet()) {
+                for (Entry<String, String> entry : etc.getCommands().entrySet()) {
                     if (canUseCommand(entry.getKey())) {
                         if (entry.getKey().equals("/kit") && !etc.getDataSource().hasKits()) {
                             continue;
@@ -160,15 +166,20 @@ public class Player extends BaseEntity {
                         }
                     }
                 }
-            } else if (split[0].equalsIgnoreCase("/reload")) {
+                break;
+
+            case "/reload":
                 etc.getInstance().load();
                 etc.getInstance().loadData();
-                for (Player player : etc.getServer().getPlayerList()) {
-                    player.getUser().reloadPlayer();
+                for (Player player_entry : etc.getServer().getPlayerList()) {
+                    player_entry.getUser().reloadPlayer();
                 }
                 log.info("Reloaded config");
                 sendMessage("Successfuly reloaded config");
-            } else if ((split[0].equalsIgnoreCase("/modify") || split[0].equalsIgnoreCase("/mp"))) {
+                break;
+
+            case "/modify":
+            case "/mp":
                 if (split.length > 2 && split[2].contains(":")) {
                     for (int i = 3; i < split.length; i++) {
                         if (!split[i].contains(":")) {
@@ -184,7 +195,7 @@ public class Player extends BaseEntity {
                         }
                     }
 
-                    Player player = etc.getServer().matchPlayer(split[1]);
+                    player = findPlayer(split, 1);
 
                     if (player == null) {
                         sendMessage(Colors.Rose + "Player does not exist.");
@@ -245,7 +256,7 @@ public class Player extends BaseEntity {
                         return;
                     }
 
-                    Player player = etc.getServer().matchPlayer(split[1]);
+                    player = findPlayer(split, 1);
 
                     if (player == null) {
                         sendMessage(Colors.Rose + "Player does not exist.");
@@ -287,7 +298,9 @@ public class Player extends BaseEntity {
                     sendMessage(Colors.Rose + "Modified user.");
                     log.info("Modifed user " + split[1] + ". " + key + " => " + value + " by " + getName());
                 }
-            } else if (split[0].equalsIgnoreCase("/whitelist")) {
+                break;
+
+            case "/whitelist":
                 if (split.length < 2) {
                     sendMessage(Colors.Rose + "whitelist [operation (toggle, add or remove)] <player>");
                     return;
@@ -308,7 +321,9 @@ public class Player extends BaseEntity {
                 } else {
                     sendMessage(Colors.Rose + "Invalid operation.");
                 }
-            } else if (split[0].equalsIgnoreCase("/reservelist")) {
+                break;
+
+            case "/reservelist":
                 if (split.length != 3) {
                     sendMessage(Colors.Rose + "reservelist [operation (add or remove)] [player]");
                     return;
@@ -323,13 +338,15 @@ public class Player extends BaseEntity {
                 } else {
                     sendMessage(Colors.Rose + "Invalid operation.");
                 }
-            } else if (split[0].equalsIgnoreCase("/mute")) {
+                break;
+
+            case "/mute":
                 if (split.length != 2) {
                     sendMessage(Colors.Rose + "Correct usage is: /mute [player]");
                     return;
                 }
 
-                Player player = etc.getServer().matchPlayer(split[1]);
+                player = findPlayer(split, 1);
 
                 if (player != null) {
                     if (player.toggleMute()) {
@@ -340,7 +357,11 @@ public class Player extends BaseEntity {
                 } else {
                     sendMessage(Colors.Rose + "Can't find player " + split[1]);
                 }
-            } else if ((split[0].equalsIgnoreCase("/msg") || split[0].equalsIgnoreCase("/tell")) || split[0].equalsIgnoreCase("/m")) {
+                break;
+
+            case "/msg":
+            case "/tell":
+            case "/m":
                 if (split.length < 3) {
                     sendMessage(Colors.Rose + "Correct usage is: /msg [player] [message]");
                     return;
@@ -350,7 +371,7 @@ public class Player extends BaseEntity {
                     return;
                 }
 
-                Player player = etc.getServer().matchPlayer(split[1]);
+                player = findPlayer(split, 1);
 
                 if (player != null) {
                     if (player.getName().equals(getName())) {
@@ -364,66 +385,74 @@ public class Player extends BaseEntity {
                 } else {
                     sendMessage(Colors.Rose + "Couldn't find player " + split[1]);
                 }
-            } else if (split[0].equalsIgnoreCase("/kit") && etc.getDataSource().hasKits()) {
-                if (split.length != 2 && split.length != 3) {
-                    sendMessage(Colors.Rose + "Available kits" + Colors.White + ": " + etc.getDataSource().getKitNames(this));
-                    return;
-                }
+                break;
 
-                Player toGive = this;
-                if (split.length > 2 && canIgnoreRestrictions()) {
-                    toGive = etc.getServer().matchPlayer(split[1]);
-                }
+            case "/kit":
+                if (etc.getDataSource().hasKits()) {
+                    if (split.length != 2 && split.length != 3) {
+                        sendMessage(Colors.Rose + "Available kits" + Colors.White + ": " + etc.getDataSource().getKitNames(this));
+                        return;
+                    }
 
-                Kit kit = etc.getDataSource().getKit(split[1]);
-                if (toGive != null) {
-                    if (kit != null) {
-                        if (!isInGroup(kit.Group) && !kit.Group.equals("")) {
-                            sendMessage(Colors.Rose + "That kit does not exist.");
-                        } else if (onlyOneUseKits.contains(kit.Name)) {
-                            sendMessage(Colors.Rose + "You can only get this kit once per login.");
-                        } else if (MinecraftServer.b.containsKey(getName() + " " + kit.Name)) {
-                            sendMessage(Colors.Rose + "You can't get this kit again for a while.");
-                        } else {
-                            if (!canIgnoreRestrictions()) {
-                                if (kit.Delay >= 0) {
-                                    MinecraftServer.b.put(getName() + " " + kit.Name, kit.Delay);
-                                } else {
-                                    onlyOneUseKits.add(kit.Name);
-                                }
-                            }
+                    Player toGive = this;
+                    if (split.length > 2 && canIgnoreRestrictions()) {
+                        toGive = etc.getServer().matchPlayer(split[1]);
+                    }
 
-                            log.info(getName() + " got a kit!");
-                            toGive.sendMessage(Colors.Rose + "Enjoy this kit!");
-                            for (Map.Entry<String, Integer> entry : kit.IDs.entrySet()) {
-                                try {
-                                    int itemId = 0;
-                                    try {
-                                        itemId = Integer.parseInt(entry.getKey());
-                                    } catch (NumberFormatException n) {
-                                        itemId = etc.getDataSource().getItem(entry.getKey());
+                    Kit kit = etc.getDataSource().getKit(split[1]);
+                    if (toGive != null) {
+                        if (kit != null) {
+                            if (!isInGroup(kit.Group) && !kit.Group.equals("")) {
+                                sendMessage(Colors.Rose + "That kit does not exist.");
+                            } else if (onlyOneUseKits.contains(kit.Name)) {
+                                sendMessage(Colors.Rose + "You can only get this kit once per login.");
+                            } else if (MinecraftServer.b.containsKey(getName() + " " + kit.Name)) {
+                                sendMessage(Colors.Rose + "You can't get this kit again for a while.");
+                            } else {
+                                if (!canIgnoreRestrictions()) {
+                                    if (kit.Delay >= 0) {
+                                        MinecraftServer.b.put(getName() + " " + kit.Name, kit.Delay);
+                                    } else {
+                                        onlyOneUseKits.add(kit.Name);
                                     }
+                                }
 
-                                    toGive.giveItem(itemId, kit.IDs.get(entry.getKey()));
-                                } catch (Exception e1) {
-                                    log.info("Got an exception while giving out a kit (Kit name \"" + kit.Name + "\"). Are you sure all the Ids are numbers?");
-                                    sendMessage(Colors.Rose + "The server encountered a problem while giving the kit :(");
+                                log.info(getName() + " got a kit!");
+                                toGive.sendMessage(Colors.Rose + "Enjoy this kit!");
+                                for (Map.Entry<String, Integer> entry : kit.IDs.entrySet()) {
+                                    try {
+                                        int itemId = 0;
+                                        try {
+                                            itemId = Integer.parseInt(entry.getKey());
+                                        } catch (NumberFormatException n) {
+                                            itemId = etc.getDataSource().getItem(entry.getKey());
+                                        }
+
+                                        toGive.giveItem(itemId, kit.IDs.get(entry.getKey()));
+                                    } catch (Exception e1) {
+                                        log.info("Got an exception while giving out a kit (Kit name \"" + kit.Name + "\"). Are you sure all the Ids are numbers?");
+                                        sendMessage(Colors.Rose + "The server encountered a problem while giving the kit :(");
+                                    }
                                 }
                             }
+                        } else {
+                            sendMessage(Colors.Rose + "That kit does not exist.");
                         }
                     } else {
-                        sendMessage(Colors.Rose + "That kit does not exist.");
+                        sendMessage(Colors.Rose + "That user does not exist.");
                     }
                 } else {
-                    sendMessage(Colors.Rose + "That user does not exist.");
+                    return;
                 }
-            } else if (split[0].equalsIgnoreCase("/tp")) {
+                break;
+
+            case "/tp":
                 if (split.length < 2) {
                     sendMessage(Colors.Rose + "Correct usage is: /tp [player]");
                     return;
                 }
 
-                Player player = etc.getServer().matchPlayer(split[1]);
+                player = findPlayer(split, 1);
 
                 if (player != null) {
                     if (getName().equalsIgnoreCase(player.getName())) {
@@ -436,13 +465,16 @@ public class Player extends BaseEntity {
                 } else {
                     sendMessage(Colors.Rose + "Can't find user " + split[1] + ".");
                 }
-            } else if ((split[0].equalsIgnoreCase("/tphere") || split[0].equalsIgnoreCase("/s"))) {
+                break;
+
+            case "/tphere":
+            case "/s":
                 if (split.length < 2) {
                     sendMessage(Colors.Rose + "Correct usage is: /tphere [player]");
                     return;
                 }
 
-                Player player = etc.getServer().matchPlayer(split[1]);
+                player = findPlayer(split, 1);
 
                 if (player != null) {
                     if (getName().equalsIgnoreCase(player.getName())) {
@@ -455,9 +487,16 @@ public class Player extends BaseEntity {
                 } else {
                     sendMessage(Colors.Rose + "Can't find user " + split[1] + ".");
                 }
-            } else if (split[0].equalsIgnoreCase("/playerlist") || split[0].equalsIgnoreCase("/who")) {
+                break;
+
+            case "/playerlist":
+            case "/who":
                 sendMessage(Colors.Rose + "Player list (" + etc.getMCServer().f.b.size() + "/" + etc.getInstance().getPlayerLimit() + "): " + Colors.White + etc.getMCServer().f.c());
-            } else if (split[0].equalsIgnoreCase("/item") || split[0].equalsIgnoreCase("/i") || split[0].equalsIgnoreCase("/give")) {
+                break;
+
+            case "/item":
+            case "/i":
+            case "/give":
                 if (split.length < 2) {
                     if (canIgnoreRestrictions()) {
                         sendMessage(Colors.Rose + "Correct usage is: /item [itemid] <amount> <player> (optional)");
@@ -467,12 +506,12 @@ public class Player extends BaseEntity {
                     return;
                 }
 
-                Player toGive = this;
+                target = this;
                 if (split.length == 4 && canIgnoreRestrictions()) {
-                    toGive = etc.getServer().matchPlayer(split[3]);
+                    target = etc.getServer().matchPlayer(split[3]);
                 }
 
-                if (toGive != null) {
+                if (target != null) {
                     try {
                         int itemId = 0;
                         try {
@@ -515,14 +554,14 @@ public class Player extends BaseEntity {
                         }
                         if (Item.isValidItem(itemId)) {
                             if (allowedItem || canIgnoreRestrictions()) {
-                                log.log(Level.INFO, "Giving " + toGive.getName() + " some " + itemId);
-                                toGive.giveItem(itemId, amount);
+                                log.log(Level.INFO, "Giving " + target.getName() + " some " + itemId);
+                                target.giveItem(itemId, amount);
 
-                                if (toGive.getName().equalsIgnoreCase(getName())) {
+                                if (target.getName().equalsIgnoreCase(getName())) {
                                     sendMessage(Colors.Rose + "There you go c:");
                                 } else {
                                     sendMessage(Colors.Rose + "Gift given! :D");
-                                    toGive.sendMessage(Colors.Rose + "Enjoy your gift! :D");
+                                    target.sendMessage(Colors.Rose + "Enjoy your gift! :D");
                                 }
                             } else if (!allowedItem && !canIgnoreRestrictions()) {
                                 sendMessage(Colors.Rose + "You are not allowed to spawn that item.");
@@ -536,7 +575,9 @@ public class Player extends BaseEntity {
                 } else {
                     sendMessage(Colors.Rose + "Can't find user " + split[3]);
                 }
-            } else if (split[0].equalsIgnoreCase("/tempban")) {
+                break;
+
+            case "/tempban":
                 // /tempban MINUTES HOURS DAYS
                 if (split.length == 1) {
                     // TODO;
@@ -554,7 +595,9 @@ public class Player extends BaseEntity {
                 }
                 Date date = new Date();
                 // date.
-            } else if (split[0].equalsIgnoreCase("/banlist")) {
+                break;
+
+            case "/banlist":
                 byte type = 0;
                 if (split.length == 2) {
                     if (split[1].equalsIgnoreCase("ips")) {
@@ -566,13 +609,15 @@ public class Player extends BaseEntity {
                 } else { // IP bans
                     sendMessage(Colors.Blue + "IP Ban list:" + Colors.White + " " + etc.getMCServer().f.getIpBans());
                 }
-            } else if (split[0].equalsIgnoreCase("/banip")) {
+                break;
+
+            case "/banip":
                 if (split.length < 2) {
                     sendMessage(Colors.Rose + "Correct usage is: /banip [player] <reason> (optional) NOTE: this permabans IPs.");
                     return;
                 }
 
-                Player player = etc.getServer().matchPlayer(split[1]);
+                player = findPlayer(split, 1);
 
                 if (player != null) {
                     if (!hasControlOver(player)) {
@@ -596,13 +641,15 @@ public class Player extends BaseEntity {
                 } else {
                     sendMessage(Colors.Rose + "Can't find user " + split[1] + ".");
                 }
-            } else if (split[0].equalsIgnoreCase("/ban")) {
+                break;
+
+            case "/ban":
                 if (split.length < 2) {
                     sendMessage(Colors.Rose + "Correct usage is: /ban [player] <reason> (optional)");
                     return;
                 }
 
-                Player player = etc.getServer().matchPlayer(split[1]);
+                player = findPlayer(split, 1);
 
                 if (player != null) {
                     if (!hasControlOver(player)) {
@@ -628,27 +675,33 @@ public class Player extends BaseEntity {
                     log.log(Level.INFO, "Banning " + split[1]);
                     sendMessage(Colors.Rose + "Banning " + split[1]);
                 }
-            } else if (split[0].equalsIgnoreCase("/unban")) {
+                break;
+
+            case "/unban":
                 if (split.length != 2) {
                     sendMessage(Colors.Rose + "Correct usage is: /unban [player]");
                     return;
                 }
                 etc.getServer().unban(split[1]);
                 sendMessage(Colors.Rose + "Unbanned " + split[1]);
-            } else if (split[0].equalsIgnoreCase("/unbanip")) {
+                break;
+
+            case "/unbanip":
                 if (split.length != 2) {
                     sendMessage(Colors.Rose + "Correct usage is: /unbanip [ip]");
                     return;
                 }
                 etc.getMCServer().f.d(split[1]);
                 sendMessage(Colors.Rose + "Unbanned " + split[1]);
-            } else if (split[0].equalsIgnoreCase("/kick")) {
+                break;
+
+            case "/kick":
                 if (split.length < 2) {
                     sendMessage(Colors.Rose + "Correct usage is: /kick [player] <reason> (optional)");
                     return;
                 }
 
-                Player player = etc.getServer().matchPlayer(split[1]);
+                player = findPlayer(split, 1);
 
                 if (player != null) {
                     if (!hasControlOver(player)) {
@@ -668,7 +721,9 @@ public class Player extends BaseEntity {
                 } else {
                     sendMessage(Colors.Rose + "Can't find user " + split[1] + ".");
                 }
-            } else if (split[0].equalsIgnoreCase("/me")) {
+                break;
+
+            case "/me":
                 if (isMuted()) {
                     sendMessage(Colors.Rose + "You are currently muted.");
                     return;
@@ -680,18 +735,25 @@ public class Player extends BaseEntity {
                 String paramString2 = "* " + prefix + getName() + Colors.White + " " + command.substring(command.indexOf(" ")).trim();
                 log.info("* " + getName() + " " + command.substring(command.indexOf(" ")).trim());
                 etc.getServer().messageAll(paramString2);
-            } else if (split[0].equalsIgnoreCase("/sethome")) {
-                // player.k, player.l, player.m
-                // x, y, z
-                Warp home = new Warp();
-                home.Location = getLocation();
-                home.Group = ""; // no group neccessary, lol.
-                home.Name = getName();
-                etc.getInstance().changeHome(home);
-                sendMessage(Colors.Rose + "Your home has been set.");
-            } else if (split[0].equalsIgnoreCase("/spawn")) {
+                break;
+
+            case "/setspawn":
+                etc.getMCServer().e.m = (int) Math.ceil(getX());
+                etc.getMCServer().e.o = (int) Math.ceil(getZ());
+                // Too lazy to actually update this considering it's not even
+                // used anyways.
+                // this.d.e.n = (int) Math.ceil(e.m); //Not that the Y axis
+                // really matters since it tries to get the highest point iirc.
+
+                log.info("Spawn position changed.");
+                sendMessage(Colors.Rose + "You have set the spawn to your current position.");
+                break;
+
+            case "/spawn":
                 teleportTo(etc.getServer().getSpawnLocation());
-            } else if (split[0].equalsIgnoreCase("/setspawn")) {
+                break;
+
+            case "/sethome":
                 etc.getMCServer().e.m = (int) Math.ceil(getX());
                 etc.getMCServer().e.o = (int) Math.ceil(getZ());
                 // Too lazy to actually update this considering it's not even
@@ -701,7 +763,9 @@ public class Player extends BaseEntity {
                 
                 log.info("Spawn position changed.");
                 sendMessage(Colors.Rose + "You have set the spawn to your current position.");
-            } else if (split[0].equalsIgnoreCase("/home")) {
+                break;
+
+            case "/home":
                 Warp home = null;
                 if (split.length > 1 && isAdmin()) {
                     home = etc.getDataSource().getHome(split[1]);
@@ -716,13 +780,15 @@ public class Player extends BaseEntity {
                 } else {
                     teleportTo(etc.getServer().getSpawnLocation());
                 }
-            } else if (split[0].equalsIgnoreCase("/warp")) {
+                break;
+
+            case "/warp":
                 if (split.length < 2) {
                     sendMessage(Colors.Rose + "Correct usage is: /warp [warpname]");
                     return;
                 }
                 Player toWarp = this;
-                Warp warp = null;
+                warp = null;
                 if (split.length == 3 && canIgnoreRestrictions()) {
                     warp = etc.getDataSource().getWarp(split[1]);
                     toWarp = etc.getServer().matchPlayer(split[2]);
@@ -743,12 +809,16 @@ public class Player extends BaseEntity {
                 } else {
                     sendMessage(Colors.Rose + "Player not found.");
                 }
-            } else if (split[0].equalsIgnoreCase("/listwarps") && etc.getDataSource().hasWarps()) {
+                break;
+
+            case "/listwarps":
                 if (split.length != 2 && split.length != 3) {
                     sendMessage(Colors.Rose + "Available warps: " + Colors.White + etc.getDataSource().getWarpNames(this));
                     return;
                 }
-            } else if (split[0].equalsIgnoreCase("/setwarp")) {
+                break;
+
+            case "/setwarp":
                 if (split.length < 2) {
                     if (canIgnoreRestrictions()) {
                         sendMessage(Colors.Rose + "Correct usage is: /setwarp [warpname] [group]");
@@ -761,7 +831,7 @@ public class Player extends BaseEntity {
                     sendMessage("You can't set a warp with \":\" in its name");
                     return;
                 }
-                Warp warp = new Warp();
+                warp = new Warp();
                 warp.Name = split[1];
                 warp.Location = getLocation();
                 if (split.length == 3) {
@@ -771,19 +841,23 @@ public class Player extends BaseEntity {
                 }
                 etc.getInstance().setWarp(warp);
                 sendMessage(Colors.Rose + "Created warp point " + split[1] + ".");
-            } else if (split[0].equalsIgnoreCase("/removewarp")) {
+                break;
+
+            case "/removewarp":
                 if (split.length < 2) {
                     sendMessage(Colors.Rose + "Correct usage is: /removewarp [warpname]");
                     return;
                 }
-                Warp warp = etc.getDataSource().getWarp(split[1]);
+                warp = etc.getDataSource().getWarp(split[1]);
                 if (warp != null) {
                     etc.getDataSource().removeWarp(warp);
                     sendMessage(Colors.Blue + "Warp removed.");
                 } else {
                     sendMessage(Colors.Rose + "That warp does not exist");
                 }
-            } else if (split[0].equalsIgnoreCase("/lighter")) {
+                break;
+
+            case "/lighter":
                 if (MinecraftServer.b.containsKey(getName() + " lighter")) {
                     log.info(getName() + " failed to iron!");
                     sendMessage(Colors.Rose + "You can't create another lighter again so soon");
@@ -794,11 +868,9 @@ public class Player extends BaseEntity {
                     log.info(getName() + " created a lighter!");
                     giveItem(259, 1);
                 }
-            } else if ((command.startsWith("/#")) && (etc.getMCServer().f.g(getName()))) {
-                String str = command.substring(2);
-                log.info(getName() + " issued server command: " + str);
-                etc.getMCServer().a(str, user.a);
-            } else if (split[0].equalsIgnoreCase("/time")) {
+                break;
+
+            case "/time":
                 if (split.length == 2) {
                     if (split[1].equalsIgnoreCase("day")) {
                         etc.getServer().setRelativeTime(0);
@@ -825,18 +897,24 @@ public class Player extends BaseEntity {
                     sendMessage(Colors.Rose + "Correct usage is: /time [time|'day|night|check|raw'] (rawtime)");
                     return;
                 }
-            } else if (split[0].equalsIgnoreCase("/getpos")) {
+                break;
+
+            case "/getpos":
                 sendMessage("Pos X: " + getX() + " Y: " + getY() + " Z: " + getZ());
                 sendMessage("Rotation: " + getRotation() + " Pitch: " + getPitch());
 
-                double degreeRotation = ((getRotation() - 90) % 360);
+                degreeRotation = ((getRotation() - 90) % 360);
                 if (degreeRotation < 0) {
                     degreeRotation += 360.0;
                 }
                 sendMessage("Compass: " + etc.getCompassPointForDirection(degreeRotation) + " (" + (Math.round(degreeRotation * 10) / 10.0) + ")");
-            } else if (split[0].equalsIgnoreCase("/listplugins")) {
+                break;
+
+            case "/listplugins":
                 sendMessage(Colors.Rose + "Plugins" + Colors.White + ": " + etc.getLoader().getPluginList());
-            } else if (split[0].equalsIgnoreCase("/reloadplugin")) {
+                break;
+
+            case "/reloadplugin":
                 if (split.length < 2) {
                     sendMessage(Colors.Rose + "Correct usage is: /reloadplugin [plugin]");
                     return;
@@ -844,7 +922,9 @@ public class Player extends BaseEntity {
 
                 etc.getLoader().reloadPlugin(split[1]);
                 sendMessage(Colors.Rose + "Plugin reloaded.");
-            } else if (split[0].equalsIgnoreCase("/enableplugin")) {
+                break;
+
+            case "/enableplugin":
                 if (split.length < 2) {
                     sendMessage(Colors.Rose + "Correct usage is: /enableplugin [plugin]");
                     return;
@@ -852,7 +932,9 @@ public class Player extends BaseEntity {
 
                 etc.getLoader().enablePlugin(split[1]);
                 sendMessage(Colors.Rose + "Plugin enabled.");
-            } else if (split[0].equalsIgnoreCase("/disableplugin")) {
+                break;
+
+            case "/disableplugin":
                 if (split.length < 2) {
                     sendMessage(Colors.Rose + "Correct usage is: /disableplugin [plugin]");
                     return;
@@ -860,18 +942,24 @@ public class Player extends BaseEntity {
 
                 etc.getLoader().disablePlugin(split[1]);
                 sendMessage(Colors.Rose + "Plugin disabled.");
-            } else if (split[0].equalsIgnoreCase("/compass")) {
-                double degreeRotation = ((getRotation() - 90) % 360);
+                break;
+
+            case "/compass":
+                degreeRotation = ((getRotation() - 90) % 360);
                 if (degreeRotation < 0) {
                     degreeRotation += 360.0;
                 }
 
                 sendMessage(Colors.Rose + "Compass: " + etc.getCompassPointForDirection(degreeRotation));
-            } else if (split[0].equalsIgnoreCase("/motd")) {
+                break;
+
+            case "/motd":
                 for (String str : etc.getInstance().getMotd()) {
                     sendMessage(str);
                 }
-            } else if (split[0].equalsIgnoreCase("/spawnmob")) {
+                break;
+
+            case "/spawnmob":
                 if (split.length == 1) {
                     sendMessage(Colors.Rose + "Correct usage is: /spawnmob [name] <amount>");
                     return;
@@ -915,8 +1003,10 @@ public class Player extends BaseEntity {
                         sendMessage(Colors.Rose + "Invalid number of mobs.");
                     }
                 }
-            } else if (split[0].equalsIgnoreCase("/clearinventory")) {
-                Player target = this;
+                break;
+
+            case "/clearinventory":
+                target = this;
                 if (split.length >= 2 && isAdmin()) {
                     target = etc.getServer().matchPlayer(split[1]);
                 }
@@ -934,30 +1024,45 @@ public class Player extends BaseEntity {
                 } else {
                     sendMessage(Colors.Rose + "Target not found");
                 }
-            } else if (split[0].equals("/mspawn")) {
+                break;
+
+            case "/mspawn":
                 if (split.length != 2) {
                     sendMessage(Colors.Rose + "You must specify what to change the mob spawner to.");
                     return;
                 }
                 HitBlox hb = new HitBlox(this);
                 Block block = hb.getTargetBlock();
-		if (block.getType() == 52) { // mob spawner
+                if (block.getType() == 52) { // mob spawner
                     block.setSpawnData(split[1]);
                 } else {
                     sendMessage(Colors.Rose + "You are not targeting a mob spawner.");
                 }
-            } else if (split[0].equalsIgnoreCase("/version")) {
+                break;
+
+            case "/version":
                 if (!etc.getInstance().getTainted())
                     sendMessage(Colors.Gold + "Hey0 Server Mod Build " + etc.getInstance().getVersion());
                 else {
                     sendMessage(Colors.Gold + "Unofficial hMod Build " + etc.getInstance().getVersionStr());
                 }
-            } else {
-                log.info(getName() + " tried command " + command);
-                if (etc.getInstance().showUnknownCommand()) {
-                    sendMessage(Colors.Rose + "Unknown command");
+                break;
+
+            default:
+                if ((command.startsWith("/#")) && (etc.getMCServer().f.g(getName()))) {
+                    String str = command.substring(2);
+                    log.info(getName() + " issued server command: " + str);
+                    etc.getMCServer().a(str, user.a);
+                } else {
+                    log.info(getName() + " tried command " + command);
+                    if (etc.getInstance().showUnknownCommand()) {
+                        sendMessage(Colors.Rose + "Unknown command");
+                    }
                 }
+                break;
+
             }
+
         } catch (Throwable ex) { // Might as well try and catch big exceptions
             // before the server crashes from a stack
             // overflow or something
@@ -967,9 +1072,19 @@ public class Player extends BaseEntity {
             }
         }
     }
+
+    /**
+     * Search server and return Player object or null
+     * @param split
+     * @return Player
+     */
+	private Player findPlayer(String[] split, int pos) {
+		return etc.getServer().matchPlayer(split[pos]);
+	}
+
     /**
      * Gives an item to the player
-     * 
+     *
      * @param itemId
      * @param amount
      */
@@ -980,7 +1095,7 @@ public class Player extends BaseEntity {
 
     /**
      * Gives the player this item by dropping it in front of them
-     * 
+     *
      * @param item
      */
     public void giveItemDrop(Item item) {
@@ -989,7 +1104,7 @@ public class Player extends BaseEntity {
 
     /**
      * Gives the player this item by dropping it in front of them
-     * 
+     *
      * @param itemId
      * @param amount
      */
@@ -1011,22 +1126,20 @@ public class Player extends BaseEntity {
 
     /**
      * Returns true if this player can use the specified command
-     * 
+     *
      * @param command
      * @return
      */
     public boolean canUseCommand(String command) {
-        for (String str : commands) {
-            if (str.equalsIgnoreCase(command)) {
-                return true;
-            }
+        if (commands.contains(command.toLowerCase())) {
+            return !etc.getDisallowedCommands().contains(command.toLowerCase());
         }
 
         for (String str : groups) {
             Group g = etc.getDataSource().getGroup(str);
             if (g != null) {
                 if (recursiveUseCommand(g, command)) {
-                    return true;
+                    return !etc.getDisallowedCommands().contains(command.toLowerCase());
                 }
             }
         }
@@ -1035,7 +1148,7 @@ public class Player extends BaseEntity {
             Group def = etc.getInstance().getDefaultGroup();
             if (def != null) {
                 if (recursiveUseCommand(def, command)) {
-                    return true;
+                    return !etc.getDisallowedCommands().contains(command.toLowerCase());
                 }
             }
         }
@@ -1065,7 +1178,7 @@ public class Player extends BaseEntity {
 
     /**
      * Checks to see if this player is in the specified group
-     * 
+     *
      * @param group
      * @return
      */
@@ -1113,7 +1226,7 @@ public class Player extends BaseEntity {
 
     /**
      * Returns true if this player has control over the other player
-     * 
+     *
      * @param player
      * @return true if player has control
      */
@@ -1137,7 +1250,7 @@ public class Player extends BaseEntity {
 
     /**
      * Returns the player's name
-     * 
+     *
      * @return
      */
     public String getName() {
@@ -1146,7 +1259,7 @@ public class Player extends BaseEntity {
 
     /**
      * Returns the player's current location
-     * 
+     *
      * @return
      */
     public Location getLocation() {
@@ -1161,7 +1274,7 @@ public class Player extends BaseEntity {
 
     /**
      * Returns the IP of this player
-     * 
+     *
      * @return
      */
     public String getIP() {
@@ -1170,7 +1283,7 @@ public class Player extends BaseEntity {
 
     /**
      * Returns true if this player is an admin.
-     * 
+     *
      * @return
      */
     public boolean isAdmin() {
@@ -1191,7 +1304,7 @@ public class Player extends BaseEntity {
 
     /**
      * Don't use this! Use isAdmin
-     * 
+     *
      * @return
      */
     public boolean getAdmin() {
@@ -1200,7 +1313,7 @@ public class Player extends BaseEntity {
 
     /**
      * Sets whether or not this player is an administrator
-     * 
+     *
      * @param admin
      */
     public void setAdmin(boolean admin) {
@@ -1209,7 +1322,7 @@ public class Player extends BaseEntity {
 
     /**
      * Returns false if this player can not modify terrain, edit chests, etc.
-     * 
+     *
      * @return
      */
     public boolean canBuild() {
@@ -1237,7 +1350,7 @@ public class Player extends BaseEntity {
 
     /**
      * Don't use this, use canBuild()
-     * 
+     *
      * @return
      */
     public boolean canModifyWorld() {
@@ -1246,7 +1359,7 @@ public class Player extends BaseEntity {
 
     /**
      * Sets whether or not this player can modify the world terrain
-     * 
+     *
      * @param canModifyWorld
      */
     public void setCanModifyWorld(boolean canModifyWorld) {
@@ -1255,25 +1368,27 @@ public class Player extends BaseEntity {
 
     /**
      * Set allowed commands
-     * 
+     *
      * @return
      */
-    public String[] getCommands() {
+    public ArrayList<String> getCommands() {
         return commands;
     }
 
     /**
      * Sets this player's allowed commands
-     * 
+     *
      * @param commands
      */
     public void setCommands(String[] commands) {
-        this.commands = commands;
+        for (String command : commands) {
+            this.commands.add(command.toLowerCase());
+        }
     }
 
     /**
      * Returns this player's groups
-     * 
+     *
      * @return
      */
     public String[] getGroups() {
@@ -1284,7 +1399,7 @@ public class Player extends BaseEntity {
 
     /**
      * Sets this player's groups
-     * 
+     *
      * @param groups
      */
     public void setGroups(String[] groups) {
@@ -1298,9 +1413,8 @@ public class Player extends BaseEntity {
 
     /**
      * Adds the player to the specified group
-     * 
-     * @param group
-     *            group to add player to
+     *
+     * @param group group to add player to
      */
     public void addGroup(String group) {
         this.groups.add(group);
@@ -1312,7 +1426,7 @@ public class Player extends BaseEntity {
 
     /**
      * Returns the sql ID.
-     * 
+     *
      * @return
      */
     public int getSqlId() {
@@ -1321,7 +1435,7 @@ public class Player extends BaseEntity {
 
     /**
      * Sets the sql ID. Don't touch this.
-     * 
+     *
      * @param id
      */
     public void setSqlId(int id) {
@@ -1331,7 +1445,7 @@ public class Player extends BaseEntity {
     /**
      * If the user can ignore restrictions this will return true. Things like
      * item amounts and such are unlimited, etc.
-     * 
+     *
      * @return
      */
     public boolean canIgnoreRestrictions() {
@@ -1352,7 +1466,7 @@ public class Player extends BaseEntity {
 
     /**
      * Don't use. Use canIgnoreRestrictions()
-     * 
+     *
      * @return
      */
     public boolean ignoreRestrictions() {
@@ -1361,7 +1475,7 @@ public class Player extends BaseEntity {
 
     /**
      * Sets ignore restrictions
-     * 
+     *
      * @param ignoreRestrictions
      */
     public void setIgnoreRestrictions(boolean ignoreRestrictions) {
@@ -1370,7 +1484,7 @@ public class Player extends BaseEntity {
 
     /**
      * Returns allowed IPs
-     * 
+     *
      * @return
      */
     public String[] getIps() {
@@ -1379,7 +1493,7 @@ public class Player extends BaseEntity {
 
     /**
      * Sets allowed IPs
-     * 
+     *
      * @param ips
      */
     public void setIps(String[] ips) {
@@ -1388,7 +1502,7 @@ public class Player extends BaseEntity {
 
     /**
      * Returns the correct color/prefix for this player
-     * 
+     *
      * @return
      */
     public String getColor() {
@@ -1409,7 +1523,7 @@ public class Player extends BaseEntity {
 
     /**
      * Returns the prefix. NOTE: Don't use this, use getColor() instead.
-     * 
+     *
      * @return
      */
     public String getPrefix() {
@@ -1418,7 +1532,7 @@ public class Player extends BaseEntity {
 
     /**
      * Sets the prefix
-     * 
+     *
      * @param prefix
      */
     public void setPrefix(String prefix) {
@@ -1427,7 +1541,7 @@ public class Player extends BaseEntity {
 
     /**
      * Gets the actual user class.
-     * 
+     *
      * @return
      */
     public er getUser() {
@@ -1436,7 +1550,7 @@ public class Player extends BaseEntity {
 
     /**
      * Sets the user. Don't use this.
-     * 
+     *
      * @param er
      */
     public void setUser(er er) {
@@ -1467,7 +1581,7 @@ public class Player extends BaseEntity {
 
     /**
      * Returns the players health.
-     * 
+     *
      * @return
      */
     public int getHealth(){
@@ -1475,15 +1589,14 @@ public class Player extends BaseEntity {
     }
     /**
      * Increase player health.
-     * @param health
-     *          amount of health to increase the players health with.
+     * @param health amount of health to increase the players health with.
      */
     public void increaseHealth(int health){
         user.a(health);
     }
     /**
      * Returns true if the player is muted
-     * 
+     *
      * @return
      */
     public boolean isMuted() {
@@ -1492,7 +1605,7 @@ public class Player extends BaseEntity {
 
     /**
      * Toggles mute
-     * 
+     *
      * @return
      */
     public boolean toggleMute() {
@@ -1502,7 +1615,7 @@ public class Player extends BaseEntity {
 
     /**
      * Checks to see if this player is in any groups
-     * 
+     *
      * @return true if this player is in any group
      */
     public boolean hasNoGroups() {
@@ -1517,7 +1630,7 @@ public class Player extends BaseEntity {
 
     /**
      * Returns item id in player's hand
-     * 
+     *
      * @return
      */
     public int getItemInHand() {
@@ -1526,7 +1639,7 @@ public class Player extends BaseEntity {
 
     /**
      * Returns this player's inventory
-     * 
+     *
      * @return inventory
      */
     public Inventory getInventory() {
@@ -1535,7 +1648,7 @@ public class Player extends BaseEntity {
 
     /**
      * Returns this player's crafting table (2x2)
-     * 
+     *
      * @return inventory
      */
     public Inventory getCraftingTable() {
@@ -1544,7 +1657,7 @@ public class Player extends BaseEntity {
 
     /**
      * Returns this player's equipment
-     * 
+     *
      * @return inventory
      */
     public Inventory getEquipment() {

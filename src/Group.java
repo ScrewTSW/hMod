@@ -21,6 +21,7 @@ public class Group {
     /**
      * List of commands this group can use
      */
+    //TODO: Refactor to ArrayList<String>
     public String[] Commands;
     /**
      * List of groups this group inherits/has control over

@@ -12,7 +12,7 @@ import java.util.logging.Level;
 
 /**
  * FlatFileSource.java - Accessing users, groups and such from flat files.
- * 
+ *
  * @author James
  */
 public class FlatFileSource extends DataSource {
@@ -651,7 +651,7 @@ public class FlatFileSource extends DataSource {
             builder.append(":");
             builder.append(player.getPrefix());
             builder.append(":");
-            builder.append(etc.combineSplit(0, player.getCommands(), ","));
+            builder.append(etc.combineSplit(0, player.getCommands().toArray(new String[0]), ","));
             bw.append(builder.toString());
             bw.newLine();
             bw.close();
@@ -689,7 +689,7 @@ public class FlatFileSource extends DataSource {
                     builder.append(":");
                     builder.append(player.getPrefix());
                     builder.append(":");
-                    builder.append(etc.combineSplit(0, player.getCommands(), ","));
+                    builder.append(etc.combineSplit(0, player.getCommands().toArray(new String[0]), ","));
                     toWrite.append(builder.toString()).append("\r\n");
                 }
             }
