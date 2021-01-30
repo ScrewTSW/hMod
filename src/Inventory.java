@@ -1,11 +1,9 @@
-
 /**
  * Inventory.java - Interface to player inventories
  * 
  * @author James
  */
 public class Inventory extends ItemArray {
-
     /**
      * The type of inventory to use
      */
@@ -24,7 +22,7 @@ public class Inventory extends ItemArray {
          */
         Equipment
     }
-    private er user;
+    private es user;
     private Type type;
 
     /**
@@ -103,15 +101,62 @@ public class Inventory extends ItemArray {
         user.a.d();
     }
 
-    public hl[] getArray() {
+    public hm[] getArray() {
         switch (type) {
             case Inventory:
-                return user.al.a;
+                return user.am.a;
             case CraftingTable:
-                return user.al.c;
+                return user.am.c;
             case Equipment:
-                return user.al.b;
+                return user.am.b;
         }
-        return new hl[0];
+        return new hm[0];
+    }
+
+    /**
+     * Returns a String value representing this Block
+     * 
+     * @return String representation of this block
+     */
+    @Override
+    public String toString() {
+        return String.format("Inventory[user=%s, type=%s]", user.getPlayer(), type);
+    }
+
+    /**
+     * Tests the given object to see if it equals this object
+     * 
+     * @param obj the object to test
+     * @return true if the two objects match
+     */
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final Inventory other = (Inventory) obj;
+        if (!this.user.getPlayer().equals(other.user.getPlayer())) {
+            return false;
+        }
+        if (this.type != other.type) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Returns a semi-unique hashcode for this block
+     * 
+     * @return hashcode
+     */
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 97 * hash + this.user.hashCode();
+        hash = 97 * hash + this.type.ordinal();
+        return hash;
     }
 }

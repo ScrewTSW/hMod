@@ -1,11 +1,9 @@
 
 /**
  * Item.java - Item stuff.
- * 
  * @author James
  */
 public class Item {
-
     private int itemId = 1, amount = 1, slot = -1;
 
     /**
@@ -16,7 +14,6 @@ public class Item {
 
     /**
      * Creates an item with specified id and amount
-     * 
      * @param itemId
      * @param amount
      */
@@ -27,7 +24,6 @@ public class Item {
 
     /**
      * Creates an item with specified id, amount and slot
-     * 
      * @param itemId
      * @param amount
      * @param slot
@@ -38,14 +34,17 @@ public class Item {
         this.slot = slot;
     }
 
-    public Item(hl hl) {
-        itemId = hl.c;
-        amount = hl.a;
+    /**
+     * Creates an item from the actual item class
+     * @param hm
+     */
+    public Item(hm hm) {
+        itemId = hm.c;
+        amount = hm.a;
     }
 
     /**
      * Returns the item id
-     * 
      * @return item id
      */
     public int getItemId() {
@@ -54,7 +53,6 @@ public class Item {
 
     /**
      * Sets item id to specified id
-     * 
      * @param itemId
      */
     public void setItemId(int itemId) {
@@ -63,7 +61,6 @@ public class Item {
 
     /**
      * Returns the amount
-     * 
      * @return amount
      */
     public int getAmount() {
@@ -72,7 +69,6 @@ public class Item {
 
     /**
      * Sets the amount
-     * 
      * @param amount
      */
     public void setAmount(int amount) {
@@ -81,20 +77,18 @@ public class Item {
 
     /**
      * Returns true if specified item id is a valid item id.
-     * 
      * @param itemId
      * @return
      */
     public static boolean isValidItem(int itemId) {
-        if (itemId < fj.c.length) {
-            return fj.c[itemId] != null;
+        if (itemId < fk.c.length) {
+            return fk.c[itemId] != null;
         }
         return false;
     }
 
     /**
      * Returns this item's current slot. -1 if no slot is specified
-     * 
      * @return slot
      */
     public int getSlot() {
@@ -103,10 +97,60 @@ public class Item {
 
     /**
      * Sets this item's slot
-     * 
      * @param slot
      */
     public void setSlot(int slot) {
         this.slot = slot;
+    }
+
+    /**
+     * Returns a String value representing this object
+     * 
+     * @return String representation of this object
+     */
+    @Override
+    public String toString() {
+        return String.format("Item[id=%d, amount=%d, slot=%d]", itemId, amount, slot);
+    }
+
+    /**
+     * Tests the given object to see if it equals this object
+     * 
+     * @param obj the object to test
+     * @return true if the two objects match
+     */
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final Item other = (Item) obj;
+        if (this.itemId != other.itemId) {
+            return false;
+        }
+        if (this.amount != other.amount) {
+            return false;
+        }
+        if (this.slot != other.slot) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Returns a semi-unique hashcode for this object
+     * 
+     * @return hashcode
+     */
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 97 * hash + this.itemId;
+        hash = 97 * hash + this.amount;
+        hash = 97 * hash + this.slot;
+        return hash;
     }
 }

@@ -6,11 +6,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -47,6 +43,7 @@ public class etc {
     private PluginLoader loader;
     private boolean logging = false;
     private boolean enableHealth = true;
+    private PluginLoader.HookResult autoHeal = PluginLoader.HookResult.DEFAULT_ACTION;
     private boolean showUnknownCommand = true;
     private String versionStr;
     private boolean tainted = true;
@@ -147,6 +144,14 @@ public class etc {
             spawnProtectionSize = properties.getInt("spawn-protection-size", 16);
             logging = properties.getBoolean("logging", false);
             enableHealth = properties.getBoolean("enable-health", true);
+
+            String autoHealString = properties.getString("auto-heal", "default");
+            if (autoHealString.equalsIgnoreCase("true")) {
+                autoHeal = PluginLoader.HookResult.ALLOW_ACTION;
+            } else if (autoHealString.equalsIgnoreCase("false")) {
+                autoHeal = PluginLoader.HookResult.PREVENT_ACTION;
+            }
+
             showUnknownCommand = properties.getBoolean("show-unknown-command", true);
             URL url = this.getClass().getResource("/version.txt");
             if (url != null) {
@@ -154,7 +159,7 @@ public class etc {
                 BufferedReader bufferedReader = new BufferedReader(ins);
                 String versionParam = bufferedReader.readLine();
                 if (versionParam.startsWith("git-")) { // recommended version.txt for git builds: git-<gituser>-<shorttag>
-                                                       // example: git-sk89q-591c662cf4afc8e3e09a
+                    // example: git-sk89q-591c662cf4afc8e3e09a
                     version = -1;
                     versionStr = versionParam;
                     tainted = true;
@@ -333,9 +338,20 @@ public class etc {
      *
      * @return
      */
-    public boolean isHealthEnabled(){
+    public boolean isHealthEnabled() {
         return enableHealth;
     }
+    
+
+    /**
+     * Returns the status of auto-heal.
+     *
+     * @return
+     */
+    public PluginLoader.HookResult autoHeal() {
+        return autoHeal;
+    }
+
     /**
      * Adds command to the /help list
      *
@@ -385,7 +401,10 @@ public class etc {
         }
 
         boolean dontParseRegular = true;
-        if (split[0].equalsIgnoreCase("help") || split[0].equalsIgnoreCase("mod-help")) {
+        if (split[0].equalsIgnoreCase("save-all")) {
+            dontParseRegular = false;
+            getServer().saveInventories();
+        } else if (split[0].equalsIgnoreCase("help") || split[0].equalsIgnoreCase("mod-help")) {
             if (split[0].equalsIgnoreCase("help")) {
                 dontParseRegular = false;
             }
@@ -615,7 +634,7 @@ public class etc {
     public static ArrayList<String> getDisallowedCommands() {
         return disallowedCommands;
     }
-
+    
     /**
      * Returns a list of disallowed items for /item
      *

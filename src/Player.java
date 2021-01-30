@@ -14,10 +14,9 @@ import net.minecraft.server.MinecraftServer;
  *
  * @author James
  */
-public class Player extends BaseEntity {
-
-    public static Logger log = Logger.getLogger("Minecraft");
-    private er user;
+public class Player extends LivingEntity {
+    private static final Logger log = Logger.getLogger("Minecraft");
+    private es player;
     private int id = -1;
     private String prefix = "";
     private ArrayList<String> commands = new ArrayList<>();
@@ -33,6 +32,15 @@ public class Player extends BaseEntity {
 
     /**
      * Creates a player interface
+     * @param player player to interface
+     */
+    public Player(es player) {
+        super(player);
+        this.player = player;
+    }
+
+    /**
+     * Creates an empty player (FlatFileSource uses it, any use? O.o)
      */
     public Player() {
     }
@@ -43,7 +51,7 @@ public class Player extends BaseEntity {
      * @param reason
      */
     public void kick(String reason) {
-        user.a.c(reason);
+        player.a.c(reason);
     }
 
     /**
@@ -52,7 +60,7 @@ public class Player extends BaseEntity {
      * @param message
      */
     public void sendMessage(String message) {
-        user.a.msg(message);
+        player.a.msg(message);
     }
 
     /**
@@ -69,15 +77,15 @@ public class Player extends BaseEntity {
      *
      * @param message
      */
-    public void chat(String message){
+    public void chat(String message) {
         if (message.length() > 100) {
-            user.a.c("Chat message too long");
+            kick("Chat message too long");
             return;
         }
         message = message.trim();
         Matcher m = badChatPattern.matcher(message);
         if (m.find()) {
-            user.a.c("Illegal characters '" + m.group() + "' hex: " + Integer.toHexString(message.charAt(m.start())) + " in chat");
+            kick("Illegal characters '" + m.group() + "' hex: " + Integer.toHexString(message.charAt(m.start())) + " in chat");
             return;
         }
         if (message.startsWith("/")) {
@@ -87,7 +95,7 @@ public class Player extends BaseEntity {
                 sendMessage(Colors.Rose + "You are currently muted.");
                 return;
             }
-            if ((Boolean) etc.getLoader().callHook(PluginLoader.Hook.CHAT, new Object[]{user, message})) {
+            if ((Boolean) etc.getLoader().callHook(PluginLoader.Hook.CHAT, new Object[]{player, message})) {
                 return;
             }
 
@@ -96,20 +104,21 @@ public class Player extends BaseEntity {
             etc.getServer().messageAll(chat);
         }
     }
+
     /**
      * Makes player use command.
      * 
      * @param command
      * 
      */
-    public void command(String command){
+    public void command(String command) {
         try {
-            String[] split = command.split(" ");
-            String command_start = split[0].toLowerCase();
             if (etc.getInstance().isLogging()) {
                 log.info("Command used by " + getName() + " " + command);
             }
-            if ((Boolean) etc.getLoader().callHook(PluginLoader.Hook.COMMAND, new Object[]{user, split})) {
+            String[] split = command.split(" ");
+            String command_start = split[0].toLowerCase();
+            if ((Boolean) etc.getLoader().callHook(PluginLoader.Hook.COMMAND, new Object[]{player, split})) {
                 return; // No need to go on, commands were parsed.
             }
             if (!canUseCommand(command_start) && !command_start.startsWith("/#")) {
@@ -378,10 +387,9 @@ public class Player extends BaseEntity {
                         sendMessage(Colors.Rose + "You can't message yourself!");
                         return;
                     }
-                    String prefix = getColor();
 
-                    player.sendMessage("(MSG) " + prefix + "<" + getName() + "> " + Colors.White + etc.combineSplit(2, split, " "));
-                    sendMessage("(MSG) " + prefix + "<" + getName() + "> " + Colors.White + etc.combineSplit(2, split, " "));
+                    player.sendMessage("(MSG) " + getColor() + "<" + getName() + "> " + Colors.White + etc.combineSplit(2, split, " "));
+                    sendMessage("(MSG) " + getColor() + "<" + getName() + "> " + Colors.White + etc.combineSplit(2, split, " "));
                 } else {
                     sendMessage(Colors.Rose + "Couldn't find player " + split[1]);
                 }
@@ -731,8 +739,7 @@ public class Player extends BaseEntity {
                 if (split.length == 1) {
                     return;
                 }
-                String prefix = getColor();
-                String paramString2 = "* " + prefix + getName() + Colors.White + " " + command.substring(command.indexOf(" ")).trim();
+                String paramString2 = "* " + getColor() + getName() + Colors.White + " " + command.substring(command.indexOf(" ")).trim();
                 log.info("* " + getName() + " " + command.substring(command.indexOf(" ")).trim());
                 etc.getServer().messageAll(paramString2);
                 break;
@@ -760,7 +767,7 @@ public class Player extends BaseEntity {
                 // used anyways.
                 // this.d.e.n = (int) Math.ceil(e.m); //Not that the Y axis
                 // really matters since it tries to get the highest point iirc.
-                
+
                 log.info("Spawn position changed.");
                 sendMessage(Colors.Rose + "You have set the spawn to your current position.");
                 break;
@@ -1031,10 +1038,18 @@ public class Player extends BaseEntity {
                     sendMessage(Colors.Rose + "You must specify what to change the mob spawner to.");
                     return;
                 }
+                if (!Mob.isValid(split[1])) {
+                    sendMessage(Colors.Rose + "Invalid mob specified.");
+                    return;
+                }
+
                 HitBlox hb = new HitBlox(this);
                 Block block = hb.getTargetBlock();
                 if (block.getType() == 52) { // mob spawner
-                    block.setSpawnData(split[1]);
+                    MobSpawner ms = (MobSpawner) etc.getServer().getComplexBlock(block.getX(), block.getY(), block.getZ());
+                    if (ms != null)
+                        ms.setSpawn(split[1]);
+                    // block.setSpawnData(split[1]);
                 } else {
                     sendMessage(Colors.Rose + "You are not targeting a mob spawner.");
                 }
@@ -1052,7 +1067,7 @@ public class Player extends BaseEntity {
                 if ((command.startsWith("/#")) && (etc.getMCServer().f.g(getName()))) {
                     String str = command.substring(2);
                     log.info(getName() + " issued server command: " + str);
-                    etc.getMCServer().a(str, user.a);
+                    etc.getMCServer().a(str, player.player.a);
                 } else {
                     log.info(getName() + " tried command " + command);
                     if (etc.getInstance().showUnknownCommand()) {
@@ -1078,6 +1093,7 @@ public class Player extends BaseEntity {
      * @param split
      * @return Player
      */
+    @Deprecated
 	private Player findPlayer(String[] split, int pos) {
 		return etc.getServer().matchPlayer(split[pos]);
 	}
@@ -1110,14 +1126,14 @@ public class Player extends BaseEntity {
      */
     public void giveItemDrop(int itemId, int amount) {
         if (amount == -1) {
-            user.a(new hl(itemId, 255));
+            player.a(new hm(itemId, 255));
         } else {
             int temp = amount;
             do {
                 if (temp - 64 >= 64) {
-                    user.a(new hl(itemId, 64));
+                    player.a(new hm(itemId, 64));
                 } else {
-                    user.a(new hl(itemId, temp));
+                    player.a(new hm(itemId, temp));
                 }
                 temp -= 64;
             } while (temp > 0);
@@ -1254,7 +1270,7 @@ public class Player extends BaseEntity {
      * @return
      */
     public String getName() {
-        return user.as;
+        return player.at;
     }
 
     /**
@@ -1278,7 +1294,7 @@ public class Player extends BaseEntity {
      * @return
      */
     public String getIP() {
-        return user.a.b.b().toString().split(":")[0].substring(1);
+        return player.a.b.b().toString().split(":")[0].substring(1);
     }
 
     /**
@@ -1420,6 +1436,10 @@ public class Player extends BaseEntity {
         this.groups.add(group);
     }
 
+    /**
+     * Removes specified group from list of groups
+     * @param group group to remove
+     */
     public void removeGroup(String group) {
         this.groups.remove(group);
     }
@@ -1544,8 +1564,8 @@ public class Player extends BaseEntity {
      *
      * @return
      */
-    public er getUser() {
-        return user;
+    public es getUser() {
+        return player;
     }
 
     /**
@@ -1553,16 +1573,16 @@ public class Player extends BaseEntity {
      *
      * @param er
      */
-    public void setUser(er er) {
-        this.user = er;
-        this.entity = er;
+    public void setUser(es es) {
+        this.player = es;
+        this.entity = es;
         this.inventory = new Inventory(this, Inventory.Type.Inventory);
         this.craftingTable = new Inventory(this, Inventory.Type.CraftingTable);
         this.equipment = new Inventory(this, Inventory.Type.Equipment);
     }
 
     public void teleportTo(double x, double y, double z, float rotation, float pitch) {
-        user.a.a(x, y, z, rotation, pitch);
+        player.a.a(x, y, z, rotation, pitch);
     }
 
     /**
@@ -1573,10 +1593,11 @@ public class Player extends BaseEntity {
      *
      * @param health
      */
+    @Deprecated
     public void setHealth(int health) {
         if(health < -1) health = -1;
         if(health > 20) health = 20;
-        user.aQ = health;
+        player.ac = health;
     }
 
     /**
@@ -1584,15 +1605,17 @@ public class Player extends BaseEntity {
      *
      * @return
      */
+    @Deprecated
     public int getHealth(){
-        return user.aQ;
+        return player.ac;
     }
     /**
      * Increase player health.
      * @param health amount of health to increase the players health with.
      */
+    @Deprecated
     public void increaseHealth(int health){
-        user.a(health);
+        player.a(health);
     }
     /**
      * Returns true if the player is muted
@@ -1634,7 +1657,7 @@ public class Player extends BaseEntity {
      * @return
      */
     public int getItemInHand() {
-        return user.a.getItemInHand();
+        return player.a.getItemInHand();
     }
 
     /**
@@ -1662,5 +1685,48 @@ public class Player extends BaseEntity {
      */
     public Inventory getEquipment() {
         return equipment;
+    }
+
+    /**
+     * Returns a String representation of this Player
+     * 
+     * @return String representation of this Player
+     */
+    @Override
+    public String toString() {
+        return String.format("Player[id=%d, name=%s]", id, getName());
+    }
+
+    /**
+     * Tests the given object to see if it equals this object
+     * 
+     * @param obj the object to test
+     * @return true if the two objects match
+     */
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final Player other = (Player) obj;
+        if (this.id != other.id) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Returns a unique hashcode for this Player
+     * 
+     * @return hashcode
+     */
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 71 * hash + this.id;
+        return hash;
     }
 }

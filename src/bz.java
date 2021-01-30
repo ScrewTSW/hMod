@@ -12,6 +12,7 @@ public class bz extends Thread {
         this.server = paramMinecraftServer;
     }
 
+    @Override
     public void run() {
         BufferedReader localBufferedReader = new BufferedReader(new InputStreamReader(System.in));
         String str = null;
