@@ -1,0 +1,55 @@
+plugins {
+    id 'java'
+}
+
+group 'eu.thescrewcollab'
+version '130'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation fileTree(dir: 'src/main/resources/lib', includes: ['*.jar'])
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.6.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+compileJava {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+jar {
+    manifest {
+        attributes (
+            'Class-Path': 'minecraft_server.jar mysql-connector-java-bin.jar plugins/ ai.class ap.class ar.class \
+as.class ay.class Ban.class BanSystem.class BaseEntity.class BaseVehicle.class be.class Block$1.class Block$Face.class \
+Block.class Boat.class bt.class bz.class cf.class Chest.class ci.class cl.class Colors.class ComplexBlock.class \
+DataSource.class Digging.class dr.class du.class dw.class dy.class es.class etc.class FlatFileSource.class fl.class \
+fu.class Furnace.class fy.class gh.class gk.class gq.class Group.class gu.class HitBlox.class hj.class HumanEntity.class \
+ib.class Inventory$1.class Inventory$Type.class Inventory.class is.class ItemArray.class Item.class iv.class jd.class \
+jh.class jn.class jp.class js.class jz.class Kit.class LivingEntity.class Location.class Main.class Minecart$Type.class \
+Minecart.class Mob.class MobSpawner.class MyClassLoader.class MySQLSource.class Player.class Plugin.class \
+PluginInterface.class PluginListener$Priority.class PluginListener.class PluginLoader$1.class \
+PluginLoader$DamageType.class PluginLoader$Hook.class PluginLoader$HookResult.class PluginLoader.class \
+PluginRegisteredListener.class PropertiesFile.class Server.class Sign.class StorageMinecart.class Warp.class z.class',
+            'Main-Class': 'Main'
+        )
+    }
+    from {
+        sourceSets.main.collect {
+            it.getAllJava().collect {
+                System.out.println("source:"+it.getPath());
+                return it
+            }
+        }
+    }
+    processResources.exclude("lib")
+    processResources.include("version.txt")
+    archiveFileName = 'Minecraft_Mod.jar'
+}
