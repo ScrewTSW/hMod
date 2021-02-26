@@ -3,7 +3,7 @@ plugins {
 }
 
 group 'eu.thescrewcollab'
-version '130'
+version '133'
 
 repositories {
     mavenCentral()
@@ -27,17 +27,22 @@ compileJava {
 jar {
     manifest {
         attributes (
-            'Class-Path': 'minecraft_server.jar mysql-connector-java-bin.jar plugins/ ai.class ap.class ar.class \
-as.class ay.class Ban.class BanSystem.class BaseEntity.class BaseVehicle.class be.class Block$1.class Block$Face.class \
-Block.class Boat.class bt.class bz.class cf.class Chest.class ci.class cl.class Colors.class ComplexBlock.class \
-DataSource.class Digging.class dr.class du.class dw.class dy.class es.class etc.class FlatFileSource.class fl.class \
-fu.class Furnace.class fy.class gh.class gk.class gq.class Group.class gu.class HitBlox.class hj.class HumanEntity.class \
-ib.class Inventory$1.class Inventory$Type.class Inventory.class is.class ItemArray.class Item.class iv.class jd.class \
-jh.class jn.class jp.class js.class jz.class Kit.class LivingEntity.class Location.class Main.class Minecart$Type.class \
-Minecart.class Mob.class MobSpawner.class MyClassLoader.class MySQLSource.class Player.class Plugin.class \
-PluginInterface.class PluginListener$Priority.class PluginListener.class PluginLoader$1.class \
-PluginLoader$DamageType.class PluginLoader$Hook.class PluginLoader$HookResult.class PluginLoader.class \
-PluginRegisteredListener.class PropertiesFile.class Server.class Sign.class StorageMinecart.class Warp.class z.class',
+            'Class-Path': 'minecraft_server.jar mysql-connector-java-bin.jar plugins/ af.class ao.class av.class \
+aw.class az.class ba.class Ban.class BanSystem.class BaseCommand.class BaseContainerBlock.class BaseEntity.class \
+BaseVehicle.class bb.class bg.class Block$1.class Block$Face.class Block$Type.class Block.class Boat.class bo.class \
+cf.class Chest.class ci.class cl.class Colors.class ComplexBlock.class Container.class cq.class cu.class cw.class \
+DataSource.class DelayedTask.class di.class Digging.class dk.class DoubleChest.class eh.class ek.class em.class \
+ep.class etc$1.class etc.class fi.class FlatFileSource.class Furnace.class gc.class gl.class gq.class Group.class \
+hb.class hf.class hh.class HitBlox.class hj.class hl.class hp.class ht.class HumanEntity.class hx.class ii.class \
+in.class Inventory.class it.class Item$Type.class ItemArray.class Item.class jb.class jh.class jy.class kh.class \
+Kit.class kj.class kk.class kq.class ks.class kv.class lc.class le.class LivingEntity.class Location.class Main.class \
+MessageReceiver.class Minecart$Type.class Minecart.class Mob.class MobSpawner.class MyClassLoader.class \
+MySQLSource.class Player.class PlayerInventory.class Plugin.class PluginInterface.class PluginListener$Priority.class \
+PluginListener.class PluginLoader$1.class PluginLoader$DamageType.class PluginLoader$Hook.class \
+PluginLoader$HookResult.class PluginLoader.class PluginRegisteredListener.class PropertiesFile.class Server.class \
+ServerConsoleCommands$1.class ServerConsoleCommands$2.class ServerConsoleCommands$3.class ServerConsoleCommands$4.class \
+ServerConsoleCommands$5.class ServerConsoleCommands$6.class ServerConsoleCommands$7.class ServerConsoleCommands$8.class \
+ServerConsoleCommands$9.class ServerConsoleCommands.class Sign.class StorageMinecart.class Warp.class Workbench.class',
             'Main-Class': 'Main'
         )
     }

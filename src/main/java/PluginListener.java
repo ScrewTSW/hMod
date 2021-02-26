@@ -4,7 +4,7 @@
  * 
  * @author Maine
  */
-public abstract class PluginListener {
+public class PluginListener {
 
     /**
      * Priority - Used for priority for plugin listeners
@@ -173,7 +173,7 @@ public abstract class PluginListener {
      * @deprecated use onBlockRightClick to get the information
      * @see #onBlockRightClicked(Player, Block, Item)
      * @see #onBlockPlace(Player, Block, Block, Item)
-     * @see #onItemUse(Player, Item)
+     * @see #onItemUse(Player, Block, Block, Item)
      */
     @Deprecated
     public boolean onBlockCreate(Player player, Block blockPlaced, Block blockClicked, int itemInHand) {
@@ -213,40 +213,6 @@ public abstract class PluginListener {
     }
 
     /**
-     * Called when a player's inventory is modified.
-     * 
-     * @param player
-     *            player who's inventory was modified
-     * @return true if you want any changes to be reverted
-     */
-    public boolean onInventoryChange(Player player) {
-        return false;
-    }
-
-    /**
-     * Called when a player's crafting table inventory is modified. This is the
-     * 2x2 box in a player's inventory, not the actual 3x3 crafting table!
-     * 
-     * @param player
-     *            player who's crafting table was modified
-     * @return true if you want any changes to be reverted
-     */
-    public boolean onCraftInventoryChange(Player player) {
-        return false;
-    }
-
-    /**
-     * Called when a player's equipment inventory is modified.
-     * 
-     * @param player
-     *            player who's equipment was modified
-     * @return true if you want any changes to be reverted
-     */
-    public boolean onEquipmentChange(Player player) {
-        return false;
-    }
-
-    /**
      * Called when a player drops an item.
      * 
      * @param player
@@ -270,32 +236,6 @@ public abstract class PluginListener {
      * @return true if you want to leave the item where it was
      */
     public boolean onItemPickUp(Player player, Item item) {
-        return false;
-    }
-
-    /**
-     * Called when either a sign, chest or furnace is changed.
-     * 
-     * @param player
-     *            player who changed it
-     * @param block
-     *            complex block that changed
-     * @return true if you want any changes to be reverted
-     */
-    public boolean onComplexBlockChange(Player player, ComplexBlock block) {
-        return false;
-    }
-
-    /**
-     * Called when either a sign, chest or furnace is sent to a player
-     * 
-     * @param player
-     *            player who the block is being sent to
-     * @param block
-     *            complex block that's being sent
-     * @return true if you want the chest, furnace or sign to be empty
-     */
-    public boolean onSendComplexBlock(Player player, ComplexBlock block) {
         return false;
     }
 
@@ -456,9 +396,10 @@ public abstract class PluginListener {
      * 
      * @param vehicle the vehicle
      * @param collisioner
+     * @return false to ignore damage
      */
-    public void onVehicleCollision(BaseVehicle vehicle, BaseEntity collisioner) {
-
+    public Boolean onVehicleCollision(BaseVehicle vehicle, BaseEntity collisioner) {
+        return false;
     }
 
     /**
@@ -489,14 +430,16 @@ public abstract class PluginListener {
     public void onVehiclePositionChange(BaseVehicle vehicle, int x, int y, int z) {
 
     }
+
     /**
      * Called when a player uses an item (rightclick with item in hand)
      * @param player the player
+     * @param blockPlaced where a block would end up when the item was a bucket
+     * @param blockClicked
      * @param item the item being used (in hand)
      * @return true to prevent using the item.
      */
-
-    public boolean onItemUse(Player player, Item item) {
+    public boolean onItemUse(Player player, Block blockPlaced, Block blockClicked, Item item) {
         return false;
     }
 
@@ -538,5 +481,53 @@ public abstract class PluginListener {
      */
     public PluginLoader.HookResult onLiquidDestroy( PluginLoader.HookResult currentState, int liquidBlockId, Block targetBlock )  {
         return PluginLoader.HookResult.DEFAULT_ACTION;
+    }
+
+    /**
+     * Called when an entity (attacker) tries to hurt a player (defender).
+     * Returning 'true' prevents all damage, returning 'false' lets the game handle it.
+     * Remember that the damage will be lessened by the amount of {@link LivingEntity#getLastDamage()}
+     * the defender has.
+     * 
+     * @param attacker the giver
+     * @param defender the taker
+     * @param amount of damage the entity tries to do
+     * @return
+     */
+    public boolean onAttack(LivingEntity attacker, LivingEntity defender, Integer amount) {
+        return false;
+    }
+
+    /**
+     * Called when a player attempts to open an inventory; whether it's a
+     * workbench, a chest or their own player inventory
+     *
+     * @param player user who attempted to open the inventory
+     * @param inventory the inventory that they are attempting to open
+     * @return
+     */
+    public boolean onOpenInventory(Player player, Inventory inventory) {
+        return false;
+    }
+
+    /**
+     * Called when a sign is shown to a player, most often when they come into
+     * range of a sign.
+     * 
+     * @param player Player who this sign is being shown to
+     * @param sign Sign which is being shown to the player
+     */
+    public void onSignShow(Player player, Sign sign) {
+    }
+
+    /**
+     * Called when a sign is changed by a player (Usually, when they first place it)
+     * 
+     * @param player Player who changed the sign
+     * @param sign Sign which had changed
+     * @return true if you wish to cancel this change
+     */
+    public boolean onSignChange(Player player, Sign sign) {
+        return false;
     }
 }

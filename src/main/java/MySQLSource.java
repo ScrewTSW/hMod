@@ -9,7 +9,7 @@ import java.util.logging.Level;
 
 /**
  * MySQLSource.java - Used for accessing users and such from a mysql database
- *
+ * 
  * @author James
  */
 public class MySQLSource extends DataSource {

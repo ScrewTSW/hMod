@@ -2,19 +2,14 @@
  * StorageMinecart - So we can access what's in them.
  * @author James
  */
-public class StorageMinecart extends ItemArray {
-
-    private jn cart;
+public class StorageMinecart extends ItemArray<kq> {
 
     /**
      * Creates an interface for storage of powered and storage carts.
-     * @param cart
+     * @param jo
      */
-    public StorageMinecart(jn cart) {
-        this.cart = cart;
+    public StorageMinecart(kq cart) {
+        super(cart);
     }
 
-    public hm[] getArray() {
-        return cart.ak;
-    }
 }

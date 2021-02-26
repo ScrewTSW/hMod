@@ -4,16 +4,15 @@
  * @author James
  */
 public class Sign implements ComplexBlock {
-
-    private jm sign;
+    private kp sign;
 
     /**
      * Creates a sign interface
      * 
      * @param localav
      */
-    public Sign(jm sign) {
-        this.sign = sign;
+    public Sign(kp localay) {
+        this.sign = localay;
     }
 
     /**
@@ -56,8 +55,12 @@ public class Sign implements ComplexBlock {
         return sign.d;
     }
 
+    public Block getBlock() {
+        return etc.getServer().getBlockAt(getX(), getY(), getZ());
+    }
+
     public void update() {
-        sign.c();
+        sign.d();
     }
 
     /**
@@ -67,7 +70,7 @@ public class Sign implements ComplexBlock {
      */
     @Override
     public String toString() {
-        return String.format("Sign[x=%d, y=%d, z=%d, type=%d]", getX(), getY(), getZ());
+        return String.format("Sign [x=%d, y=%d, z=%d]", getX(), getY(), getZ());
     }
 
     /**

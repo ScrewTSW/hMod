@@ -3,160 +3,40 @@
  * 
  * @author James
  */
-public class Inventory extends ItemArray {
+public interface Inventory {
     /**
-     * The type of inventory to use
+     * Updates this inventory, sending the new information to clients
      */
-    public enum Type {
-
-        /**
-         * Regular inventory
-         */
-        Inventory,
-        /**
-         * The small, 2x2 crafting table
-         */
-        CraftingTable,
-        /**
-         * The player's equipment
-         */
-        Equipment
-    }
-    private es user;
-    private Type type;
+    public void update();
 
     /**
-     * Creates an interface for this player's inventory
-     * 
-     * @param player
-     * @param type
+     * Clears this inventory
      */
-    public Inventory(Player player, Type type) {
-        this.user = player.getUser();
-        this.type = type;
-    }
+    public void clearContents();
 
-    /**
-     * Gives this player an item. If the inventory is full some will drop on the
-     * ground.
-     * 
-     * @param itemId
-     * @param amount
-     */
-    public void giveItem(int itemId, int amount) {
-        if (amount == -1) {
-            int emptySlot = getEmptySlot();
-            if (emptySlot == -1) {
-                user.getPlayer().giveItemDrop(itemId, -1);
-            } else {
-                addItem(new Item(itemId, 255, emptySlot));
-            }
-            return;
-        }
-
-        int temp = amount;
-        do {
-            int amountToAdd = temp >= 64 ? 64 : temp;
-
-            if (hasItem(itemId, 1, 63)) { // Do we already have an item we can
-                // add to?
-                Item i = getItemFromId(itemId, 63);
-                if (i != null) {
-                    if (amountToAdd == 64) {
-                        int a = amountToAdd - i.getAmount();
-                        i.setAmount(64);
-                        temp -= a;
-                    } else if (amountToAdd + i.getAmount() > 64) {
-                        int a = amountToAdd + i.getAmount() - 64;
-                        i.setAmount(64);
-                        temp = a;
-                    } else if (amountToAdd + i.getAmount() <= 64) {
-                        i.setAmount(amountToAdd + i.getAmount());
-                        temp = 0;
-                    }
-                    addItem(i);
-                    continue;
-                }
-            }
-
-            int emptySlot = getEmptySlot();
-            if (emptySlot == -1) // No empty slots
-            {
-                break;
-            }
-            addItem(new Item(itemId, amountToAdd, emptySlot));
-            temp -= 64;
-        } while (temp > 0);
-
-        if (temp > 0) { // If the inventory's full it'll drop the rest on the
-            // ground.
-            user.getPlayer().giveItemDrop(itemId, temp);
-        }
-    }
-
-    /**
-     * Sends the edited inventory to the client.
-     */
-    public void updateInventory() {
-        user.a.d();
-    }
-
-    public hm[] getArray() {
-        switch (type) {
-            case Inventory:
-                return user.am.a;
-            case CraftingTable:
-                return user.am.c;
-            case Equipment:
-                return user.am.b;
-        }
-        return new hm[0];
-    }
-
-    /**
-     * Returns a String value representing this Block
-     * 
-     * @return String representation of this block
-     */
-    @Override
-    public String toString() {
-        return String.format("Inventory[user=%s, type=%s]", user.getPlayer(), type);
-    }
-
-    /**
-     * Tests the given object to see if it equals this object
-     * 
-     * @param obj the object to test
-     * @return true if the two objects match
-     */
-    @Override
-    public boolean equals(Object obj) {
-        if (obj == null) {
-            return false;
-        }
-        if (getClass() != obj.getClass()) {
-            return false;
-        }
-        final Inventory other = (Inventory) obj;
-        if (!this.user.getPlayer().equals(other.user.getPlayer())) {
-            return false;
-        }
-        if (this.type != other.type) {
-            return false;
-        }
-        return true;
-    }
-
-    /**
-     * Returns a semi-unique hashcode for this block
-     * 
-     * @return hashcode
-     */
-    @Override
-    public int hashCode() {
-        int hash = 7;
-        hash = 97 * hash + this.user.hashCode();
-        hash = 97 * hash + this.type.ordinal();
-        return hash;
-    }
+    public void addItem(Item item);
+    public Item getItemFromSlot(int slot);
+    public Item getItemFromId(Item.Type type);
+    public Item getItemFromId(int id);
+    public Item getItemFromId(Item.Type type, int maxAmount);
+    public Item getItemFromId(int id, int maxAmount);
+    public int getEmptySlot();
+    public void removeItem(int slot);
+    public void setSlot(Item item, int slot);
+    public void setSlot(Item.Type type, int amount, int slot);
+    public void setSlot(int itemId, int amount, int slot);
+    public void setSlot(int itemId, int amount, int damage, int slot);
+    public void removeItem(Item item);
+    public void removeItem(Item.Type type, int amount);
+    public void removeItem(int id, int amount);
+    public boolean hasItem(Item.Type type);
+    public boolean hasItem(int itemId);
+    public boolean hasItem(Item.Type type, int minimum);
+    public boolean hasItem(int itemId, int minimum);
+    public boolean hasItem(int itemId, int minimum, int maximum);
+    public Item[] getContents();
+    public void setContents(Item[] contents);
+    public int getContentsSize();
+    public String getName();
+    public void setName(String value);
 }
